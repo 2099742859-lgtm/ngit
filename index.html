@@ -1,227 +1,45 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<title>Universal Compatible Totally Normal Password Generator</title>
+  <meta charset="UTF-8">
+  <title>这个网站什么也没有</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #0e0e11;
+      color: #e5e5e5;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                   "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    }
 
-<!--
-===============================================================================
-  This file is intentionally insane.
-  It is compatible with:
-    - Modern browsers
-    - Old browsers
-    - Your patience
-    - Or not.
-===============================================================================
--->
+    .center {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      flex-direction: column;
+      gap: 20px;
+    }
 
-<style>
-body {
-  background:#111;
-  color:#0f0;
-  font-family: monospace;
-  margin:0;
-  overflow:hidden;
-}
-#app {
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-  text-align:center;
-}
-button {
-  padding:12px 20px;
-  background:black;
-  border:1px solid #0f0;
-  color:#0f0;
-  cursor:pointer;
-}
-.char {
-  position:absolute;
-  font-size:26px;
-  pointer-events:none;
-}
-body.chaos #app { opacity:0.1; }
-</style>
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+    }
+
+    p {
+      font-size: 1rem;
+      opacity: 0.6;
+    }
+  </style>
 </head>
-
-<body class="normal">
-
-<div id="app">
-  <h1>密码生成器</h1>
-  <button id="gen">生成密码</button>
-  <button id="copy" style="display:none">复制</button>
-  <div id="status"></div>
-</div>
-
-<script>
-/******************************************************************************
- * CORE SYSTEM
- *****************************************************************************/
-const gen = document.getElementById("gen");
-const copy = document.getElementById("copy");
-const status = document.getElementById("status");
-
-let chars = [];
-let ready = false;
-let timer = 10;
-let timerId = null;
-let flashId = null;
-
-function fly(el) {
-  el.style.left = Math.random()*90 + "vw";
-  el.style.top = Math.random()*90 + "vh";
-}
-
-/******************************************************************************
- * BROWSER COMPATIBILITY LAYER (WINDOWS STYLE)
- *****************************************************************************/
-const BrowserMatrix = {
-  isChrome: !!window.chrome,
-  isFirefox: typeof InstallTrigger !== 'undefined',
-  isSafari: /^((?!chrome|android).)*safari/i.test(navigator.userAgent),
-  isEdge: /Edg/.test(navigator.userAgent),
-  isIE: !!document.documentMode,
-  isAncient: navigator.userAgent.includes("MSIE") || navigator.userAgent.includes("Netscape")
-};
-
-function LegacyFetch(url) {
-  if (window.fetch) return window._realFetch(url);
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("GET", url);
-    xhr.onload = () => resolve({ text: () => xhr.responseText });
-    xhr.onerror = reject;
-    xhr.send();
-  });
-}
-
-window._realFetch = window.fetch;
-window.fetch = function(url) {
-  return LegacyFetch(url);
-};
-
-const APIMappingTable = {
-  "v0": "https://v2.xxapi.cn/api/password",
-  "v1": "https://v2.xxapi.cn/api/password",
-  "v2": "https://v2.xxapi.cn/api/password",
-  "legacy": "https://v2.xxapi.cn/api/password",
-  "future": "https://v2.xxapi.cn/api/password"
-};
-
-function CallSystemAPI(name) {
-  return fetch(APIMappingTable[name] || APIMappingTable.v1);
-}
-
-/******************************************************************************
- * TIMER + RITUAL
- *****************************************************************************/
-function startTimer() {
-  ready = false;
-  timer = 10;
-  clearInterval(timerId);
-  clearInterval(flashId);
-  copy.style.display = "inline-block";
-  copy.textContent = "等待 10 秒";
-
-  timerId = setInterval(() => {
-    timer--;
-    if (timer <= 0) {
-      ready = true;
-      clearInterval(timerId);
-      status.textContent = "现在去抓住复制按钮 😈";
-      startFlash();
-    } else {
-      copy.textContent = "等待 " + timer + " 秒";
-    }
-  }, 1000);
-}
-
-function startFlash() {
-  flashId = setInterval(() => {
-    if (Math.random() < 0.5) {
-      copy.style.display = "none";
-    } else {
-      copy.style.display = "inline-block";
-      fly(copy);
-    }
-  }, 400);
-}
-
-document.addEventListener("click", () => {
-  if (chars.length > 0) startTimer();
-});
-
-/******************************************************************************
- * PASSWORD GENERATION
- *****************************************************************************/
-gen.onclick = async () => {
-  document.body.className = "chaos";
-  status.textContent = "正在从兼容层拉取密码…";
-
-  const r = await CallSystemAPI("v2");
-  const pwd = await r.text();
-
-  chars.forEach(c => c.remove());
-  chars = [];
-
-  [...pwd].forEach(ch => {
-    const s = document.createElement("span");
-    s.className = "char";
-    s.textContent = ch;
-    document.body.appendChild(s);
-    chars.push(s);
-    setInterval(() => {
-      s.style.left = Math.random()*95 + "vw";
-      s.style.top = Math.random()*95 + "vh";
-    }, 500 + Math.random()*1000);
-  });
-
-  status.textContent = "请等待 10 秒才能复制";
-  startTimer();
-};
-
-/******************************************************************************
- * COPY
- *****************************************************************************/
-copy.onclick = () => {
-  if (!ready) {
-    startTimer();
-    return;
-  }
-  const pwd = chars.map(c => c.textContent).join("");
-  navigator.clipboard.writeText(pwd);
-  alert("你赢了 🔓");
-};
-
-/******************************************************************************
- * WINDOWS-LIKE CHAOS OS
- *****************************************************************************/
-const Registry = { HKLM:{}, HKCU:{}, SOFTWARE:{} };
-
-class ChaosServiceManager {
-  constructor() { this.services = []; }
-  register(n,f){ this.services.push({n,f}); }
-  startAll(){ this.services.forEach(s=>s.status="running"); }
-}
-const CSM = new ChaosServiceManager();
-for(let i=0;i<20;i++){
-  CSM.register("Service_"+i,()=>Math.random());
-}
-CSM.startAll();
-
-// Fake memory manager
-const MemoryManager = { pages:[] };
-for(let i=0;i<100;i++){
-  MemoryManager.pages.push(new Array(1024).fill(i));
-}
-
-// Fake system clock
-setInterval(()=>{},10);
-
-console.log("ChaosOS booted in browser:", BrowserMatrix);
-
-</script>
+<body>
+  <div class="center">
+    <h1>这个网站什么也没有</h1>
+    <p>真的什么也没有。</p>
+  </div>
 </body>
 </html>
